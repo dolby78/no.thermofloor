@@ -1,6 +1,7 @@
 'use strict';
 
 const Homey = require('homey');
+const { discoverDevices } = require('../../lib/util/discovery');
 
 module.exports = class MyDriver extends Homey.Driver {
 
@@ -16,19 +17,42 @@ module.exports = class MyDriver extends Homey.Driver {
    * and the 'list_devices' view is called.
    * This should return an array with the data of devices that are available for pairing.
    */
-  async onPairListDevices() {
-    return [
-      // Example device data, note that `store` is optional
-      // {
-      //   name: 'My Device',
-      //   data: {
-      //     id: 'my-device',
-      //   },
-      //   store: {
-      //     address: '127.0.0.1',
-      //   },
-      // },
-    ];
-  }
+    async onPairListDevices() {
+        const discoveryResults = await discoverDevices({
+            driverName: 'WiFi Plug',
+            isModelMatch: (data) => {
+                const isCorrectModel = !data.model || data.model === "WALL PLUG";
+                return isCorrectModel
+            },
+            log: this.log.bind(this),
+        });
+
+        let compatibleDevices = [];
+
+        for (const item of discoveryResults) {
+            compatibleDevices.push(
+                {
+                    name: "WiFi Plug " + (item.Name || item.Ip),
+                    data: {
+                        id: "WiFi Plug" + item.Mac,
+                    },
+                    store: {
+                        address: item.Ip
+                    }
+                }
+            );
+        }
+
+        compatibleDevices.push(
+            {
+                name: "Add manually",
+                data: {
+                    id: "WiFi Plug" + Math.floor(Math.random() * 1000000000000),
+                },
+            }
+        );
+
+        return compatibleDevices;
+    }
 
 };
