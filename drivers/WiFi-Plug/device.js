@@ -268,7 +268,17 @@ module.exports = class MyDevice extends Homey.Device {
    * @returns {Promise<string|void>} return a custom message that will be displayed
    */
   async onSettings({ oldSettings, newSettings, changedKeys }) {
-    this.log('MyDevice settings where changed');
+      this.log("My heatit WiFi Plug device settings where changed");
+
+      if (!util.isValidIpAddress(newSettings.IPaddress)) {
+          throw new Error('Invalid IP address!')
+      }
+
+      this.IPaddress = newSettings.IPaddress;
+      this.ReportInterval = newSettings.interval;
+
+      this.MACaddress = newSettings.MACaddress.trim().toUpperCase();
+      this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
   }
 
   /**
