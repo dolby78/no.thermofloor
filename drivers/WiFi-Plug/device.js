@@ -86,7 +86,7 @@ module.exports = class MyDevice extends Homey.Device {
                 try {
                     const parsedData = JSON.parse(rawData);
                     this.ReconnactionTry = 1;
-                    this.setCapabilityValue('onoff', parsedData.parameters.dimmerState).catch(this.error);
+                    this.setCapabilityValue('onoff', parsedData.parameters.onOff).catch(this.error);
                     let kWh = this.getCapabilityValue('meter_power');
                     kWh = kWh + (parsedData.currentPower * (this.getSettings().interval / 3600)) / 1000;
                     this.setCapabilityValue('meter_power', kWh).catch(this.error);
