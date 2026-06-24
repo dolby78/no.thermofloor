@@ -3710,6 +3710,28 @@
     },
     {
       "name": {
+        "en": "WiFi Plug"
+      },
+      "class": "button",
+      "capabilities": [
+        "meter_power",
+        "measure_power",
+        "onoff"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [],
+      "images": {
+        "small": "/drivers/WiFi-Plug/assets/images/small.png",
+        "large": "/drivers/WiFi-Plug/assets/images/large.png",
+        "xlarge": "/drivers/WiFi-Plug/assets/images/xlarge.png"
+      },
+      "id": "WiFi-Plug"
+    },
+    {
+      "name": {
         "en": "WiFi6"
       },
       "class": "thermostat",
