@@ -11,7 +11,7 @@ module.exports = class MyDevice extends Homey.Device {
    */
   async onInit() {
       this.log('WiFi Plug has been initialized');
-      this.isDebug = false;
+      this.isDebug = true;
       this.deviceIsDeleted = false;
 
       this.registerCapabilityListener('onoff', async (value) => {
