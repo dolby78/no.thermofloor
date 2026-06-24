@@ -3712,7 +3712,7 @@
       "name": {
         "en": "WiFi Plug"
       },
-      "class": "button",
+      "class": "light",
       "capabilities": [
         "meter_power",
         "measure_power",

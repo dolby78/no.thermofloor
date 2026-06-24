@@ -1,8 +1,8 @@
 {
   "name": {
-    "en": "WiFi Plug"
+    "en": "WiFi-Plug"
   },
-  "class": "light",
+  "class": "button",
   "capabilities": [
     "meter_power",
     "measure_power",
