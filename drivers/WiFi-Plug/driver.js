@@ -21,7 +21,7 @@ module.exports = class MyDriver extends Homey.Driver {
         const discoveryResults = await discoverDevices({
             driverName: 'WiFi Plug',
             isModelMatch: (data) => {
-                const isCorrectModel = !data.model || data.model === "WALL PLUG";
+                const isCorrectModel = data.model !== undefined && data.model === "WALL PLUG";
                 return isCorrectModel
             },
             log: this.log.bind(this),
