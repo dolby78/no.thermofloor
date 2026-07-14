@@ -2,15 +2,11 @@
   "ExpandedNodes": [
     "",
     "\\drivers",
-    "\\drivers\\TF_Thermostat_FW1.92",
-    "\\drivers\\WiFi Panel",
-    "\\drivers\\WiFi6",
-    "\\drivers\\WiFi7",
-    "\\drivers\\WiFi7\\assets",
-    "\\lib",
-    "\\lib\\map",
-    "\\lib\\util"
+    "\\drivers\\WiFi-Plug",
+    "\\drivers\\WM_Dimmer",
+    "\\drivers\\WM_Dimmer\\assets",
+    "\\lib"
   ],
-  "SelectedNode": "\\lib\\util\\index.js",
+  "SelectedNode": "\\drivers\\WiFi-Plug\\device.js",
   "PreviewInSolutionExplorer": false
 }
