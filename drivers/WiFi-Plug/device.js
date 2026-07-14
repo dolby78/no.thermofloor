@@ -15,20 +15,19 @@ module.exports = class MyDevice extends Homey.Device {
       this.isDebug = true;
       this.deviceIsDeleted = false;
       this.LastPowerReport = Date.now();
+      this.LastBong = Date.now();
 
       this.registerCapabilityListener('onoff', async (value) => {
           this.debug("Changed On/Off", value);
           if (value) {
-              this.setOn();
+              this.WsSendCommandOn();
           } else {
-              this.setOff();
+              this.WsSendCommandOff();
           }
       });
 
       await this.loadSettings();
       await this.initWebSocket();
-
-      this.refreshStateLoop();
   }
 
     async initWebSocket() {
@@ -38,6 +37,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.ws.on('open', () => {
             this.log('Connected to the WebSocket server');
             this.setAvailable(); // Show device as online in Homey
+            this.startHeartbeat(); // Keep connection alive
         });
 
         this.ws.on('message', (data) => {
@@ -51,7 +51,7 @@ module.exports = class MyDevice extends Homey.Device {
 
         this.ws.on('close', () => {
             this.log('WebSocket connection closed. Reconnecting...');
-            this.setUnavailable('Disconnected from server'); // Show as offline
+            this.PlugIsOffline(); // Show as offline
 
             // Reconnect after 5 seconds
             setTimeout(() => this.initWebSocket(), 5000);
@@ -62,28 +62,87 @@ module.exports = class MyDevice extends Homey.Device {
         });
     }
 
+    startHeartbeat() {
+        this.SendPing();
+        this.HeartbeatIsRunning = true;
+        let sec = (Date.now() - this.LastBong) / 1000;
+        if (sec >= 65) {
+            this.PlugIsOffline();
+            this.HeartbeatIsRunning = true;
+        }
+        else {
+            setTimeout(() => {
+                this.startHeartbeat()
+            }, 60 * 1000);
+        }
+       
+    }
+
     recivedData(js) {
-        this.log('Received data: ' + js)
+        this.log('Received data: ' + JSON.stringify(js))
         if (js.state === "state" && js.data !== null) {
 
-            if (js.data.state === "On" || js.data.state === "Off") {
-                const targetOnoffState = payload.data.state === 'ON';
+            if (js.data.state === "ON" || js.data.state === "OFF") {
+                const targetOnoffState = js.data.state === 'ON';
                 // Only call Homey API if state changes to prevent system event loops
                 if (this.getCapabilityValue('onoff') !== targetOnoffState) {
                     this.setCapabilityValue('onoff', targetOnoffState)
                         .catch(err => this.error('Error updating onoff capability:', err));
                 }
-                else if (js.data.current_power !== null) {
-                    let Sec = (Date.now() - this.LastPowerReport) / 1000;
-                    this.log('Sec ' + toString(Sec));
-                    this.LastPowerReport = Date.now();
-                    let kWh = this.getCapabilityValue('meter_power');
-                    kWh = kWh + (parsedData.currentPower * (Sec / 3600)) / 1000;
-                    this.setCapabilityValue('meter_power', kWh).catch(this.error);
-                    this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
-                }
             }
+            else if (js.data.current_power !== null) {
+                let Sec = (Date.now() - this.LastPowerReport) / 1000;
+                this.log('Sec ' + toString(Sec));
+                this.LastPowerReport = Date.now();
+                let kWh = this.getCapabilityValue('meter_power');
+                kWh = kWh + (js.currentPower * (Sec / 3600)) / 1000;
+                this.setCapabilityValue('meter_power', kWh).catch(this.error);
+                this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
+            }
+        } else if (js.type === "pong") {
+            this.setAvailable().catch(this.error);
+            this.LastBong = Date.now();
+            if (this.HeartbeatIsRunning === false) {
+                this.startHeartbeat();
+            }
+        }
+    }
 
+
+    SendPing() {
+        let data = JSON.stringify({
+            'type' : 'ping',
+            'id' : 3,
+        });
+        this.sendMessage(data);
+    }
+
+    SendCommand(cmd) {
+        let data = JSON.stringify({
+            "type" : "command",
+            "id" : 2,
+            "data" : {
+                "parameter" : "state",
+                "value" : cmd // --ON ot OFF
+            }
+        });
+
+        this.sendMessage(data);
+    }
+
+    WsSendCommandOn() {
+        this.sendMessage(this.SendCommand("ON"));
+    }
+
+    WsSendCommandOff() {
+        this.sendMessage(this.SendCommand("OFF"));
+    }
+
+    sendMessage(JsonPayload) {
+        if (this.ws.OPEN) {
+            this.ws.send(JsonPayload);
+        } else {
+            this.PlugIsOffline();
         }
     }
 
@@ -110,20 +169,6 @@ module.exports = class MyDevice extends Homey.Device {
             this.setUnavailable('Please check that you have entered a valid IP address in advanced settings and that the device is turned on.').catch(this.error);
             return false
         }
-    }
-
-    refreshStateLoop() {
-
-        if (this.deviceIsDeleted) {
-            return; //Abort
-        }
-
-        if (this.ipIsValid()) {
-            this.refreshState()
-        }
-        setTimeout(() => {
-            this.refreshStateLoop()
-        }, this.ReportInterval * 1000);
     }
 
     async refreshState() {
@@ -157,7 +202,7 @@ module.exports = class MyDevice extends Homey.Device {
                 } catch (e) {
                     this.log('Cannot connect to API.')
                     this.setCapabilityValue('measure_power', 0).catch(this.error);
-                    this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
+                    this.PlugIsOffline();
                     this.debug('Cannot reach device on local WiFi');
                     this.getWiFiDeviceByMac();
                 }
@@ -165,11 +210,15 @@ module.exports = class MyDevice extends Homey.Device {
 
         }).on('error', (e) => {
             this.setCapabilityValue('measure_power', 0).catch(this.error);
-            this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
+            this.PlugIsOffline();
             this.debug('Cannot reach device on local WiFi');
             this.getWiFiDeviceByMac();
         });
 
+    }
+
+    PlugIsOffline(){
+        this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
     }
 
     getWiFiDeviceByMac() {
