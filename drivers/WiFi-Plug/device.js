@@ -3,6 +3,7 @@
 const Homey = require('homey');
 const http = require('node:http');
 const util = require('../../lib/util');
+const io = require('socket.io-client');
 
 module.exports = class MyDevice extends Homey.Device {
 
@@ -25,11 +26,24 @@ module.exports = class MyDevice extends Homey.Device {
 
       await this.loadSettings();
 
+      await this.initWebSocket();
+
       this.refreshStateLoop();
   }
 
+    async initWebSocket() {
+
+        this.socket = io("http://" + this.IPaddress +'/ws');
+
+        this.socket.on("connect", () => {
+            // Successful socket.io connection
+            console.log(`Connected to socket ID ${this.socket.id}.`);
+        });
+
+    }
+
     async loadSettings() {
-        if (this.getStore().address != null) {
+        if (this.getStore().address != null) {  
             await this.setSettings({ IPaddress: this.getStore().address, });
             this.IPaddress = this.getStore().address;
         } else {
