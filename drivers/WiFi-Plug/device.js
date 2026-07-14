@@ -14,18 +14,18 @@ module.exports = class MyDevice extends Homey.Device {
       this.log('WiFi Plug has been initialized');
       this.isDebug = true;
       this.deviceIsDeleted = false;
+      this.LastPowerReport = Date.now();
 
-      //this.registerCapabilityListener('onoff', async (value) => {
-      //    this.debug("Changed On/Off", value);
-      //    if (value) {
-      //        this.setOn();
-      //    } else {
-      //        this.setOff();
-      //    }
-      //});
+      this.registerCapabilityListener('onoff', async (value) => {
+          this.debug("Changed On/Off", value);
+          if (value) {
+              this.setOn();
+          } else {
+              this.setOff();
+          }
+      });
 
       await this.loadSettings();
-
       await this.initWebSocket();
 
       this.refreshStateLoop();
@@ -41,11 +41,9 @@ module.exports = class MyDevice extends Homey.Device {
         });
 
         this.ws.on('message', (data) => {
-            this.log('Received data:', data);
-
             try {
                 const parsed = JSON.parse(data);
-                this.handleDeviceUpdate(parsed);
+                this.recivedData(parsed);
             } catch (err) {
                 this.error('Error parsing JSON data:', err);
             }
@@ -64,16 +62,28 @@ module.exports = class MyDevice extends Homey.Device {
         });
     }
 
-    handleDeviceUpdate(payload) {
-        this.log(payload)
-        // 1. Handle Binary Switch States
-        if (typeof payload.state !== null && payload.data.state !== null) {
-            const targetOnoffState = payload.data.state === 'ON';
-            // Only call Homey API if state changes to prevent system event loops
-            if (this.getCapabilityValue('onoff') !== targetOnoffState) {
-                this.setCapabilityValue('onoff', targetOnoffState)
-                    .catch(err => this.error('Error updating onoff capability:', err));
+    recivedData(js) {
+        this.log('Received data: ' + js)
+        if (js.state === "state" && js.data !== null) {
+
+            if (js.data.state === "On" || js.data.state === "Off") {
+                const targetOnoffState = payload.data.state === 'ON';
+                // Only call Homey API if state changes to prevent system event loops
+                if (this.getCapabilityValue('onoff') !== targetOnoffState) {
+                    this.setCapabilityValue('onoff', targetOnoffState)
+                        .catch(err => this.error('Error updating onoff capability:', err));
+                }
+                else if (js.data.current_power !== null) {
+                    let Sec = (Date.now() - this.LastPowerReport) / 1000;
+                    this.log('Sec ' + toString(Sec));
+                    this.LastPowerReport = Date.now();
+                    let kWh = this.getCapabilityValue('meter_power');
+                    kWh = kWh + (parsedData.currentPower * (Sec / 3600)) / 1000;
+                    this.setCapabilityValue('meter_power', kWh).catch(this.error);
+                    this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
+                }
             }
+
         }
     }
 
