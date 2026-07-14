@@ -80,24 +80,22 @@ module.exports = class MyDevice extends Homey.Device {
 
     recivedData(js) {
         this.log('Received data: ' + JSON.stringify(js))
-        if (js.state === "state" && js.data !== null) {
-
+        if (js.type === "state" && js.data !== null) {
             if (js.data.state === "ON" || js.data.state === "OFF") {
                 const targetOnoffState = js.data.state === 'ON';
                 // Only call Homey API if state changes to prevent system event loops
                 if (this.getCapabilityValue('onoff') !== targetOnoffState) {
-                    this.setCapabilityValue('onoff', targetOnoffState)
-                        .catch(err => this.error('Error updating onoff capability:', err));
+                    this.setCapabilityValue('onoff', targetOnoffState).catch(err => this.error('Error updating onoff capability:', err));
                 }
             }
-            else if (js.data.current_power !== null) {
+            else if (js.data.current_power !== "undefined") {
                 let Sec = (Date.now() - this.LastPowerReport) / 1000;
-                this.log('Sec ' + toString(Sec));
+                this.log('Sec ' + Sec.toString());
                 this.LastPowerReport = Date.now();
                 let kWh = this.getCapabilityValue('meter_power');
                 kWh = kWh + (js.currentPower * (Sec / 3600)) / 1000;
                 this.setCapabilityValue('meter_power', kWh).catch(this.error);
-                this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
+                this.setCapabilityValue('measure_power', js.data.current_power).catch(this.error);
             }
         } else if (js.type === "pong") {
             this.setAvailable().catch(this.error);
