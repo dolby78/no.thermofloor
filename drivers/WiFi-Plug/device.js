@@ -3,7 +3,7 @@
 const Homey = require('homey');
 const http = require('node:http');
 const util = require('../../lib/util');
-const io = require('socket.io-client');
+const WebSocket = require('ws');
 
 module.exports = class MyDevice extends Homey.Device {
 
@@ -15,14 +15,14 @@ module.exports = class MyDevice extends Homey.Device {
       this.isDebug = true;
       this.deviceIsDeleted = false;
 
-      this.registerCapabilityListener('onoff', async (value) => {
-          this.debug("Changed On/Off", value);
-          if (value) {
-              this.setOn();
-          } else {
-              this.setOff();
-          }
-      });
+      //this.registerCapabilityListener('onoff', async (value) => {
+      //    this.debug("Changed On/Off", value);
+      //    if (value) {
+      //        this.setOn();
+      //    } else {
+      //        this.setOff();
+      //    }
+      //});
 
       await this.loadSettings();
 
@@ -32,14 +32,49 @@ module.exports = class MyDevice extends Homey.Device {
   }
 
     async initWebSocket() {
+        let url = 'ws://' + this.IPaddress + ":80/ws";
+        this.ws = new WebSocket(url);
 
-        this.socket = io("http://" + this.IPaddress +'/ws');
-
-        this.socket.on("connect", () => {
-            // Successful socket.io connection
-            console.log(`Connected to socket ID ${this.socket.id}.`);
+        this.ws.on('open', () => {
+            this.log('Connected to the WebSocket server');
+            this.setAvailable(); // Show device as online in Homey
         });
 
+        this.ws.on('message', (data) => {
+            this.log('Received data:', data);
+
+            try {
+                const parsed = JSON.parse(data);
+                this.handleDeviceUpdate(parsed);
+            } catch (err) {
+                this.error('Error parsing JSON data:', err);
+            }
+        });
+
+        this.ws.on('close', () => {
+            this.log('WebSocket connection closed. Reconnecting...');
+            this.setUnavailable('Disconnected from server'); // Show as offline
+
+            // Reconnect after 5 seconds
+            setTimeout(() => this.initWebSocket(), 5000);
+        });
+
+        this.ws.on('error', (err) => {
+            this.error('WebSocket error:', err);
+        });
+    }
+
+    handleDeviceUpdate(payload) {
+        this.log(payload)
+        // 1. Handle Binary Switch States
+        if (typeof payload.state !== null && payload.data.state !== null) {
+            const targetOnoffState = payload.data.state === 'ON';
+            // Only call Homey API if state changes to prevent system event loops
+            if (this.getCapabilityValue('onoff') !== targetOnoffState) {
+                this.setCapabilityValue('onoff', targetOnoffState)
+                    .catch(err => this.error('Error updating onoff capability:', err));
+            }
+        }
     }
 
     async loadSettings() {
