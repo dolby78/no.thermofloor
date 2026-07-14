@@ -68,7 +68,7 @@ module.exports = class MyDevice extends Homey.Device {
         let sec = (Date.now() - this.LastBong) / 1000;
         if (sec >= 65) {
             this.PlugIsOffline();
-            this.HeartbeatIsRunning = true;
+            this.HeartbeatIsRunning = false;
         }
         else {
             setTimeout(() => {
