@@ -18,6 +18,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.LastBong = Date.now();
       this.MaxReconnactionTrys = 5;
       this.ReconnactionTry = 1;
+      this.Power = 0;
 
       this.registerCapabilityListener('onoff', async (value) => {
           this.debug("Changed On/Off", value);
@@ -174,8 +175,6 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     GetPlugStatus() {
-
-        this.Power = 0;
 
         const client = http.get({
             hostname: this.IPaddress,
