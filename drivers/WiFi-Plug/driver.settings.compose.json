@@ -12,14 +12,5 @@
     "label": { "en": "IP address" },
     "value": "192.168.1.xxx",
     "hint": { "en": "The IP address of the WiFi Plug. You find it in the MyHeatit app." }
-  },
-  {
-    "id": "interval",
-    "type": "number",
-    "label": { "en": "Report interval (s)" },
-    "value": 30,
-    "min": 30,
-    "max": 500000,
-    "units": { "en": "Seconds" }
   }
 ]

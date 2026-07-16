@@ -155,7 +155,6 @@ module.exports = class MyDevice extends Homey.Device {
         this.ReconnactionTry = 1;
         this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
         this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
-        this.ReportInterval = this.getSettings().interval;
     }
 
     ipIsValid() {
@@ -381,8 +380,6 @@ module.exports = class MyDevice extends Homey.Device {
       }
 
       this.IPaddress = newSettings.IPaddress;
-      this.ReportInterval = newSettings.interval;
-
       this.MACaddress = newSettings.MACaddress.trim().toUpperCase();
       this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
   }
