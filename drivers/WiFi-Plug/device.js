@@ -96,15 +96,15 @@ module.exports = class MyDevice extends Homey.Device {
             }
             else if (js.data.current_power !== undefined) {
                 let Sec = (Date.now() - this.LastPowerReport) / 1000;
-                this.LastPowerReport = Date.now();
                 let kWhAdded = (this.Power * Sec) / 3600000; //Last power reported
                 let kWh = this.getCapabilityValue('meter_power');
-                this.Power = js.data.current_power;
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
                 if (this.percentChange(this.Power, js.data.current_power) >= 1.5) {
                     //Procent change more then 1.5 %
                     this.setCapabilityValue('measure_power', this.Power).catch(this.error);
                 }
+                this.Power = js.data.current_power;
+                this.LastPowerReport = Date.now();
             }
         } else if (js.type === "pong") {
             this.setAvailable().catch(this.error);
