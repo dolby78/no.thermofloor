@@ -102,7 +102,10 @@ module.exports = class MyDevice extends Homey.Device {
                 this.debug('Sec ' + Sec.toString());
                 this.Power = js.data.current_power;
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
-                this.setCapabilityValue('measure_power', this.Power).catch(this.error);
+                if (this.percentChange(this.Power, js.data.current_power) >= 1.5) {
+                    //Procent change more then 1.5 %
+                    this.setCapabilityValue('measure_power', this.Power).catch(this.error);
+                }
             }
         } else if (js.type === "pong") {
             this.setAvailable().catch(this.error);
@@ -355,6 +358,15 @@ module.exports = class MyDevice extends Homey.Device {
     debug(msg) {
         if (this.isDebug) {
             this.log(msg);
+        }
+    }
+
+    percentChange(OriginalNumber, NewNumber){
+        if(OriginalNumber === 0) {
+            return 100;
+        }
+        else {
+            return Math.abs(((OriginalNumber - NewNumber) / OriginalNumber) * 100);
         }
     }
 
