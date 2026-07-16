@@ -99,7 +99,6 @@ module.exports = class MyDevice extends Homey.Device {
                 this.LastPowerReport = Date.now();
                 let kWhAdded = (this.Power * Sec) / 3600000; //Last power reported
                 let kWh = this.getCapabilityValue('meter_power');
-                this.debug('Sec ' + Sec.toString());
                 this.Power = js.data.current_power;
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
                 if (this.percentChange(this.Power, js.data.current_power) >= 1.5) {
