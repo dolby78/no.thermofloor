@@ -56,11 +56,12 @@ module.exports = class MyDevice extends Homey.Device {
         });
 
         this.ws.on('close', () => {
-            this.debug('WebSocket connection closed. Reconnecting...');
-            this.PlugIsOffline(); // Show as offline
-
-            // Reconnect after 5 seconds
-            setTimeout(() => this.scanNetwork(), 5000);
+            if (!this.deviceIsDeleted) {
+                this.debug('WebSocket connection closed. Reconnecting...');
+                this.PlugIsOffline(); // Show as offline
+                // Reconnect after 5 seconds
+                setTimeout(() => this.scanNetwork(), 5000)
+            }
         });
 
         this.ws.on('error', (err) => {
@@ -146,7 +147,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     sendMessage(JsonPayload) {
-        if (this.ws.OPEN) {
+        if (this.ws && this.ws.OPEN) {
             this.ws.send(JsonPayload);
         } else {
             this.PlugIsOffline();
@@ -410,7 +411,9 @@ module.exports = class MyDevice extends Homey.Device {
    */
   async onDeleted() {
     this.deviceIsDeleted = true;
-    this.ws.close();
+    if (this.ws) {
+        this.ws.close();
+    }
     this.log('MyDevice has been deleted');
   }
 
