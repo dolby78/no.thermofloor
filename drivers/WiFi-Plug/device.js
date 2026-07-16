@@ -16,6 +16,8 @@ module.exports = class MyDevice extends Homey.Device {
       this.deviceIsDeleted = false;
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
+      this.MaxReconnactionTrys = 5;
+      this.ReconnactionTry = 1;
 
       this.registerCapabilityListener('onoff', async (value) => {
           this.debug("Changed On/Off", value);
@@ -25,6 +27,9 @@ module.exports = class MyDevice extends Homey.Device {
               this.WsSendCommandOff();
           }
       });
+
+      this.setCapabilityValue('measure_power', 0).catch(this.error);
+      this.setAvailable();
 
       await this.loadSettings();
       await this.initWebSocket();
@@ -152,12 +157,9 @@ module.exports = class MyDevice extends Homey.Device {
         } else {
             this.IPaddress = this.getSettings().IPaddress.trim();
         }
-        this.MaxReconnactionTrys = 5;
-        this.ReconnactionTry = 1;
+
         this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
         this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
-
-        this.setCapabilityValue('measure_power', 0).catch(this.error);
     }
 
     ipIsValid() {
