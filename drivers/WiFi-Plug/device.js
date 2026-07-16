@@ -31,8 +31,7 @@ module.exports = class MyDevice extends Homey.Device {
   }
 
     async initWebSocket() {
-        let url = 'ws://' + this.IPaddress + ":80/ws";
-        this.ws = new WebSocket(url);
+        this.ws = new WebSocket('ws://' + this.IPaddress + ":80/ws");
 
         this.ws.on('open', () => {
             this.log('Connected to the WebSocket server');
