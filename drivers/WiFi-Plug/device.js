@@ -34,7 +34,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.ws = new WebSocket('ws://' + this.IPaddress + ":80/ws");
 
         this.ws.on('open', () => {
-            this.log('Connected to the WebSocket server');
+            this.debug('Connected to the WebSocket server');
             this.setAvailable(); // Show device as online in Homey
             this.GetPlugStatus();
             this.startHeartbeat(); // Keep connection alive
@@ -50,7 +50,7 @@ module.exports = class MyDevice extends Homey.Device {
         });
 
         this.ws.on('close', () => {
-            this.log('WebSocket connection closed. Reconnecting...');
+            this.debug('WebSocket connection closed. Reconnecting...');
             this.PlugIsOffline(); // Show as offline
 
             // Reconnect after 5 seconds
@@ -79,7 +79,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     recivedData(js) {
-        this.log('Received data: ' + JSON.stringify(js))
+        this.debug('Received data: ' + JSON.stringify(js))
         if (js.type === "state" && js.data !== null) {
             if (js.data.state === "ON" || js.data.state === "OFF") {
                 const targetOnoffState = js.data.state === 'ON';
@@ -93,7 +93,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.LastPowerReport = Date.now();
                 let kWhAdded = (this.Power * Sec) / 3600000; //Last power reported
                 let kWh = this.getCapabilityValue('meter_power');
-                this.log('Sec ' + Sec.toString());
+                this.debug('Sec ' + Sec.toString());
                 this.Power = js.data.current_power;
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
                 this.setCapabilityValue('measure_power', this.Power).catch(this.error);
