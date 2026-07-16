@@ -88,14 +88,15 @@ module.exports = class MyDevice extends Homey.Device {
                     this.setCapabilityValue('onoff', targetOnoffState).catch(err => this.error('Error updating onoff capability:', err));
                 }
             }
-            else if (js.data.current_power !== "undefined") {
+            else if (js.data.current_power !== undefined) {
                 let Sec = (Date.now() - this.LastPowerReport) / 1000;
-                this.log('Sec ' + Sec.toString());
                 this.LastPowerReport = Date.now();
+                let kWhAdded = (this.Power * Sec) / 3600000; //Last power reported
                 let kWh = this.getCapabilityValue('meter_power');
-                kWh = kWh + (js.data.currentPower * (Sec / 3600)) / 1000;
-                this.setCapabilityValue('meter_power', kWh).catch(this.error);
-                this.setCapabilityValue('measure_power', js.data.current_power).catch(this.error);
+                this.log('Sec ' + Sec.toString());
+                this.Power = js.data.current_power;
+                this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
+                this.setCapabilityValue('measure_power', this.Power).catch(this.error);
             }
         } else if (js.type === "pong") {
             this.setAvailable().catch(this.error);
@@ -155,7 +156,8 @@ module.exports = class MyDevice extends Homey.Device {
         this.ReconnactionTry = 1;
         this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
         this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
-        this.setCapabilityValue('measure_power', 0).catch(this.error); //Init
+
+        this.setCapabilityValue('measure_power', 0).catch(this.error);
     }
 
     ipIsValid() {
@@ -170,6 +172,8 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     GetPlugStatus() {
+
+        this.Power = 0;
 
         const client = http.get({
             hostname: this.IPaddress,
@@ -189,7 +193,8 @@ module.exports = class MyDevice extends Homey.Device {
                     const parsedData = JSON.parse(rawData);
                     this.ReconnactionTry = 1;
                     this.setCapabilityValue('onoff', parsedData.parameters.onOff).catch(this.error);
-                    this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
+                    this.Power = parsedData.currentPower;
+                    this.setCapabilityValue('measure_power', this.Power).catch(this.error);
                     if (!this.MACaddressIsValid && this.MACaddress == "GET") {
                         this.setSettings({ MACaddress: parsedData.network.mac }).catch(this.error);
                     }
@@ -210,7 +215,8 @@ module.exports = class MyDevice extends Homey.Device {
 
     }
 
-    PlugIsOffline(){
+    PlugIsOffline() {
+        this.Power = 0;
         this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
     }
 
