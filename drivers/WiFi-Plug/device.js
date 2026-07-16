@@ -129,11 +129,11 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     WsSendCommandOn() {
-        this.sendMessage(this.SendCommand("ON"));
+        this.SendCommand("ON"); //this.sendMessage(
     }
 
     WsSendCommandOff() {
-        this.sendMessage(this.SendCommand("OFF"));
+        this.SendCommand("OFF");
     }
 
     sendMessage(JsonPayload) {
