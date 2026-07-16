@@ -29,7 +29,7 @@ module.exports = class MyDevice extends Homey.Device {
           }
       });
 
-      this.setCapabilityValue('measure_power', 0).catch(this.error);
+      this.setCapabilityValue('measure_power', this.Power).catch(this.error);
       this.setAvailable();
 
       await this.loadSettings();
@@ -60,7 +60,7 @@ module.exports = class MyDevice extends Homey.Device {
             this.PlugIsOffline(); // Show as offline
 
             // Reconnect after 5 seconds
-            setTimeout(() => this.initWebSocket(), 5000);
+            setTimeout(() => this.scanNetwork(), 5000);
         });
 
         this.ws.on('error', (err) => {
@@ -202,22 +202,19 @@ module.exports = class MyDevice extends Homey.Device {
                     if (!this.deviceIsDeleted) this.setAvailable().catch(this.error);
                 } catch (e) {
                     this.log('Cannot connect to API.')
-                    this.setCapabilityValue('measure_power', 0).catch(this.error);
                     this.PlugIsOffline();
-                    this.getWiFiDeviceByMac();
                 }
             });
 
         }).on('error', (e) => {
-            this.setCapabilityValue('measure_power', 0).catch(this.error);
             this.PlugIsOffline();
-            this.getWiFiDeviceByMac();
         });
 
     }
 
     PlugIsOffline() {
         this.Power = 0;
+        this.setCapabilityValue('measure_power', this.Power).catch(this.error);
         this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
     }
 
@@ -227,7 +224,7 @@ module.exports = class MyDevice extends Homey.Device {
         }
 
         if (this.MACaddressIsValid && this.ReconnactionTry <= this.MaxReconnactionTrys) {
-            this.log("Try:" + this.ReconnactionTry + ". Searching for WM Dimmer by MAC address: " + this.MACaddress);
+            this.log("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
             (async () => {
                 try {
                     this.scanNetwork();
@@ -259,9 +256,10 @@ module.exports = class MyDevice extends Homey.Device {
             let data = await this.getWiFiPlugData(device.ip);
             if (data.IsWiFiPlug && data.Mac === this.MACaddress) {
                 this.IPaddress = device.ip;
-                this.setSettings({ IPaddress: this.IPaddress, }); //await
+                this.setSettings({ IPaddress: this.IPaddress, }); 
                 this.log('WiFi Plug found by Mac: ' + data.Mac);
                 this.ReconnactionTry = 0;
+                await this.initWebSocket();
                 break; // Found device, exit loop
             }
         }
