@@ -121,7 +121,7 @@ module.exports = class MyDevice extends Homey.Device {
             "id" : 2,
             "data" : {
                 "parameter" : "state",
-                "value" : cmd // --ON ot OFF
+                "value" : cmd //ON or OFF
             }
         });
 
@@ -129,7 +129,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     WsSendCommandOn() {
-        this.SendCommand("ON"); //this.sendMessage(
+        this.SendCommand("ON"); 
     }
 
     WsSendCommandOff() {
