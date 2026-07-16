@@ -36,7 +36,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.ws.on('open', () => {
             this.log('Connected to the WebSocket server');
             this.setAvailable(); // Show device as online in Homey
-            await this.GetPlugStatus();
+            this.GetPlugStatus();
             this.startHeartbeat(); // Keep connection alive
         });
 
@@ -93,7 +93,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.log('Sec ' + Sec.toString());
                 this.LastPowerReport = Date.now();
                 let kWh = this.getCapabilityValue('meter_power');
-                kWh = kWh + (js.currentPower * (Sec / 3600)) / 1000;
+                kWh = kWh + (js.data.currentPower * (Sec / 3600)) / 1000;
                 this.setCapabilityValue('meter_power', kWh).catch(this.error);
                 this.setCapabilityValue('measure_power', js.data.current_power).catch(this.error);
             }
@@ -155,6 +155,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.ReconnactionTry = 1;
         this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
         this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
+        this.setCapabilityValue('measure_power', 0).catch(this.error); //Init
     }
 
     ipIsValid() {
@@ -168,7 +169,7 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    async GetPlugStatus() {
+    GetPlugStatus() {
 
         const client = http.get({
             hostname: this.IPaddress,
