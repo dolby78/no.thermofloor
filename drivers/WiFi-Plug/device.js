@@ -187,9 +187,6 @@ module.exports = class MyDevice extends Homey.Device {
                     const parsedData = JSON.parse(rawData);
                     this.ReconnactionTry = 1;
                     this.setCapabilityValue('onoff', parsedData.parameters.onOff).catch(this.error);
-                    let kWh = this.getCapabilityValue('meter_power');
-                    kWh = kWh + (parsedData.currentPower * (this.getSettings().interval / 3600)) / 1000;
-                    this.setCapabilityValue('meter_power', kWh).catch(this.error);
                     this.setCapabilityValue('measure_power', parsedData.currentPower).catch(this.error);
                     if (!this.MACaddressIsValid && this.MACaddress == "GET") {
                         this.setSettings({ MACaddress: parsedData.network.mac }).catch(this.error);
@@ -199,7 +196,6 @@ module.exports = class MyDevice extends Homey.Device {
                     this.log('Cannot connect to API.')
                     this.setCapabilityValue('measure_power', 0).catch(this.error);
                     this.PlugIsOffline();
-                    this.debug('Cannot reach device on local WiFi');
                     this.getWiFiDeviceByMac();
                 }
             });
@@ -207,7 +203,6 @@ module.exports = class MyDevice extends Homey.Device {
         }).on('error', (e) => {
             this.setCapabilityValue('measure_power', 0).catch(this.error);
             this.PlugIsOffline();
-            this.debug('Cannot reach device on local WiFi');
             this.getWiFiDeviceByMac();
         });
 
