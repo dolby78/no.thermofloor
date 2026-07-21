@@ -225,7 +225,7 @@ module.exports = class MyDevice extends Homey.Device {
         }
 
         if (this.MACaddressIsValid && this.ReconnactionTry <= this.MaxReconnactionTrys) {
-            this.log("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
+            this.debug("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
             (async () => {
                 try {
                     this.scanNetworkByMac();
