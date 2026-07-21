@@ -42,7 +42,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.ws.on('open', () => {
             this.debug('Connected to the WebSocket server');
             this.setAvailable(); // Show device as online in Homey
-            this.GetPlugStatus();
+            this.GetPlugStatus(); //From local API
             this.startHeartbeat(); // Keep connection alive
         });
 

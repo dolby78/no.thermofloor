@@ -2,10 +2,12 @@
   "ExpandedNodes": [
     "",
     "\\drivers",
+    "\\drivers\\WiFi Panel",
     "\\drivers\\WiFi-Plug",
     "\\drivers\\WM_Dimmer",
     "\\drivers\\WM_Dimmer\\assets",
-    "\\lib"
+    "\\lib",
+    "\\lib\\util"
   ],
   "SelectedNode": "\\drivers\\WiFi-Plug\\device.js",
   "PreviewInSolutionExplorer": false
