@@ -110,7 +110,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
                 if (this.percentChange(this.Power, js.data.current_power) >= 1.5) {
                     //Procent change more then 1.5 %
-                    this.setCapabilityValue('measure_power', this.Power).catch(this.error);
+                    this.setCapabilityValue('measure_power', js.data.current_power).catch(this.error);
                 }
                 this.Power = js.data.current_power;
                 this.LastPowerReport = Date.now();
@@ -318,7 +318,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     percentChange(OriginalNumber, NewNumber){
-        if(OriginalNumber === 0) {
+        if (OriginalNumber === 0 || NewNumber === 0) {
             return 100;
         }
         else {
