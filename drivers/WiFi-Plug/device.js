@@ -266,7 +266,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.IPaddress = device.ip;
                 this.setSettings({ IPaddress: this.IPaddress, }); 
                 this.log('WiFi Plug found by Mac: ' + data.Mac);
-                this.ReconnactionTry = 0;
+                this.ReconnactionTry = 1;
                 await this.initWebSocket();
                 break; // Found device, exit loop
             }
