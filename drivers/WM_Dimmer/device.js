@@ -250,7 +250,7 @@ module.exports = class MyDevice extends Homey.Device {
                 res.on('end', () => {
                     try {
                         const parsedData = JSON.parse(rawData);
-                        if (parsedData.parameters !== null && parsedData.parameters.dimLevel !== null) {
+                        if (parsedData.parameters !== undefined && parsedData.parameters.dimLevel !== undefined) {
                             this.log('IsWmDimmer true. IP: ' + ip + " Mac: " + parsedData.network.mac);
                             resolve({ "IsWmDimmer": true, "Mac": parsedData.network.mac });
                         } else {
