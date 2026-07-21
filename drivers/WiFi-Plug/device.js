@@ -91,10 +91,16 @@ module.exports = class MyDevice extends Homey.Device {
         this.debug('Received data: ' + JSON.stringify(js))
         if (js.type === "state" && js.data !== null) {
             if (js.data.state === "ON" || js.data.state === "OFF") {
-                const targetOnoffState = js.data.state === 'ON';
+                
+                const isOn = js.data.state === 'ON';
                 // Only call Homey API if state changes to prevent system event loops
-                if (this.getCapabilityValue('onoff') !== targetOnoffState) {
-                    this.setCapabilityValue('onoff', targetOnoffState).catch(err => this.error('Error updating onoff capability:', err));
+                if (this.getCapabilityValue('onoff') !== isOn) {
+                    this.setCapabilityValue('onoff', isOn).catch(err => this.error('Error updating onoff capability:', err));
+                }
+
+                if (!isOn) {
+                    this.Power = 0;
+                    this.setCapabilityValue('measure_power', this.Power).catch(this.error);
                 }
             }
             else if (js.data.current_power !== undefined) {
