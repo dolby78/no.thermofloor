@@ -330,7 +330,7 @@ module.exports = class MyDevice extends Homey.Device {
    * onAdded is called when the user adds the device, called just after pairing.
    */
   async onAdded() {
-    this.log('MyDevice has been added');
+      this.log('WiFi Wall Plug has been added');
   }
 
   /**
@@ -359,7 +359,7 @@ module.exports = class MyDevice extends Homey.Device {
    * @param {string} name The new name
    */
   async onRenamed(name) {
-    this.log('MyDevice was renamed');
+    this.log('WiFi Wall Plug was renamed');
   }
 
   /**
@@ -370,7 +370,7 @@ module.exports = class MyDevice extends Homey.Device {
     if (this.ws) {
         this.ws.close();
     }
-    this.log('MyDevice has been deleted');
+    this.log('WiFi Wall Plug has been deleted');
   }
 
 };
