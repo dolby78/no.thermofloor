@@ -30,10 +30,11 @@ module.exports = class MyDevice extends Homey.Device {
       });
 
       this.setCapabilityValue('measure_power', this.Power).catch(this.error);
-      this.setAvailable();
+      this.setAvailable().catch(this.error);
 
       await this.loadSettings();
       await this.initWebSocket();
+      this.startHeartbeat(); // Keep WebSocket connection alive
   }
 
     async initWebSocket() {
@@ -41,9 +42,8 @@ module.exports = class MyDevice extends Homey.Device {
 
         this.ws.on('open', () => {
             this.debug('Connected to the WebSocket server');
-            this.setAvailable(); // Show device as online in Homey
+            this.setAvailable().catch(this.error); // Show device as online in Homey
             this.GetPlugStatus(); //From local API
-            this.startHeartbeat(); // Keep connection alive
         });
 
         this.ws.on('message', (data) => {
@@ -60,7 +60,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.debug('WebSocket connection closed. Reconnecting...');
                 this.PlugIsOffline(); // Show as offline
                 // Reconnect after 5 seconds
-                setTimeout(() => this.scanNetwork(), 5000)
+                setTimeout(() => this.reconnectByMac(), 5000); //-> initWebSocket
             }
         });
 
@@ -71,17 +71,19 @@ module.exports = class MyDevice extends Homey.Device {
 
     startHeartbeat() {
         this.SendPing();
-        this.HeartbeatIsRunning = true;
+
         let sec = (Date.now() - this.LastBong) / 1000;
         if (sec >= 65) {
             this.PlugIsOffline();
-            this.HeartbeatIsRunning = false;
         }
-        else {
-            setTimeout(() => {
-                this.startHeartbeat()
-            }, 60 * 1000);
+
+        if (this.ws === null || (this.ws && this.ws.readyState === this.ws.CLOSED)) {
+            this.reconnectByMac(); //-->initWebSocket
         }
+
+        setTimeout(() => {
+            this.startHeartbeat()
+        }, 60 * 1000);
        
     }
 
@@ -110,9 +112,6 @@ module.exports = class MyDevice extends Homey.Device {
         } else if (js.type === "pong") {
             this.setAvailable().catch(this.error);
             this.LastBong = Date.now();
-            if (this.HeartbeatIsRunning === false) {
-                this.startHeartbeat();
-            }
         }
     }
 
@@ -147,7 +146,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     sendMessage(JsonPayload) {
-        if (this.ws && this.ws.OPEN) {
+        if (this.ws && this.ws.readyState === this.ws.OPEN) {
             this.ws.send(JsonPayload);
         } else {
             this.PlugIsOffline();
@@ -195,7 +194,6 @@ module.exports = class MyDevice extends Homey.Device {
             res.on('end', () => {
                 try {
                     const parsedData = JSON.parse(rawData);
-                    this.ReconnactionTry = 1;
                     this.setCapabilityValue('onoff', parsedData.parameters.onOff).catch(this.error);
                     this.Power = parsedData.currentPower;
                     this.setCapabilityValue('measure_power', this.Power).catch(this.error);
@@ -221,7 +219,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
     }
 
-    getWiFiDeviceByMac() {
+    reconnectByMac() {
         if (this.deviceIsDeleted) {
             return; //exit 
         }
@@ -230,7 +228,7 @@ module.exports = class MyDevice extends Homey.Device {
             this.log("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
             (async () => {
                 try {
-                    this.scanNetwork();
+                    this.scanNetworkByMac();
                 } catch (error) {
 
                 }
@@ -238,8 +236,9 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    async scanNetwork() {
+    async scanNetworkByMac() {
         this.ReconnactionTry++;
+
         const baseIp = util.getBaseIpAddress(); //'192.168.1.'
         const scanPromises = [];
         for (let i = 1; i <= 254; i++) {
