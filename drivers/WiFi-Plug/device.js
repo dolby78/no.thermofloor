@@ -268,55 +268,6 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-
-
-    async setOn() {
-        const postData = JSON.stringify({
-            'onOff': 1,
-        });
-        await this.setParameters(postData);
-    }
-
-    async setOff() {
-        const postData = JSON.stringify({
-            'onOff': 0,
-        });
-        await this.setParameters(postData);
-    }
-
-    async setParameters(postData) {
-        this.debug('setParameters');
-
-        const options = {
-            hostname: this.IPaddress,
-            port: 80,
-            path: '/api/parameters',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData),
-            },
-        };
-
-        const req = http.request(options, (res) => {
-            this.debug(`STATUS: ${res.statusCode}`);
-            this.debug(`HEADERS: ${JSON.stringify(res.headers)}`);
-            res.setEncoding('utf8');
-            res.on('data', (chunk) => {
-                this.debug(`BODY: ${chunk}`);
-            });
-            res.on('end', () => {
-            });
-        });
-
-        req.on('error', (e) => {
-            this.log(`problem with request: ${e.message}`);
-        });
-
-        req.write(postData);
-        req.end();
-    }
-
     async getWiFiPlugData(ip) {
         this.debug('Check if is WiFi Plug. IP ' + ip);
         return new Promise((resolve) => {
