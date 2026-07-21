@@ -70,6 +70,11 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     startHeartbeat() {
+
+        if (this.deviceIsDeleted) {
+            return; //exit 
+        }
+
         this.SendPing();
 
         let sec = (Date.now() - this.LastBong) / 1000;
