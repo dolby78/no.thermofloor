@@ -17,6 +17,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.Power = 0;
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
+      this.ReconnactionTry = 1;
 
       /**
        * MaxReconnactionTrys. If you unplug the device from the wall outlet, the WebSocket will trigger the close event 
