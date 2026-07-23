@@ -4,10 +4,13 @@
     "\\drivers",
     "\\drivers\\WiFi Panel",
     "\\drivers\\WiFi-Plug",
+    "\\drivers\\WiFi-Plug\\assets",
+    "\\drivers\\WiFi-Plug\\assets\\images",
     "\\drivers\\WM_Dimmer",
     "\\drivers\\WM_Dimmer\\assets",
     "\\lib",
     "\\lib\\util"
   ],
+  "SelectedNode": "\\drivers\\WiFi-Plug\\device.js",
   "PreviewInSolutionExplorer": false
 }

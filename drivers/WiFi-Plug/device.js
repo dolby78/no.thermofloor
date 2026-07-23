@@ -105,6 +105,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.SendPing();
 
         let previousReportReceivedInSec = (Date.now() - this.LastBong) / 1000;
+        this.debug("Heartbeat " + previousReportReceivedInSec.toString() + " Sec Available: " + this.PlugIsAvailable().toString())
         if (this.PlugIsAvailable() && previousReportReceivedInSec >= 65) {
             this.PlugIsOffline();
         }
