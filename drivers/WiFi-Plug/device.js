@@ -246,7 +246,7 @@ module.exports = class MyDevice extends Homey.Device {
     }
 
     PlugIsOnline() {
-        if (!PlugIsAvailable() && !this.deviceIsDeleted) {
+        if (!this.PlugIsAvailable() && !this.deviceIsDeleted) {
             this.setAvailable().catch(this.error);
         }
     }
