@@ -16,7 +16,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.deviceIsDeleted = false;
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
-      this.MaxReconnactionTrys = 5;
+      this.MaxReconnactionTrys = 5; //Reconnection by MAC if connection to Wall plug lost
       this.ReconnactionTry = 1;
       this.Power = 0;
 
