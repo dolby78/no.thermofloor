@@ -12,7 +12,7 @@ module.exports = class MyDevice extends Homey.Device {
    */
   async onInit() {
       this.log('WiFi Plug has been initialized');
-      this.isDebug = true;
+      this.isDebug = false;
       this.deviceIsDeleted = false;
       this.Power = 0;
       this.LastPowerReport = Date.now();
