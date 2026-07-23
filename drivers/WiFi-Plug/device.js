@@ -18,6 +18,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
       this.ReconnactionTry = 1;
+      this.PowerReportChangeMoreThenPercent = 5;
 
       /**
        * MaxReconnactionTrys. If you unplug the device from the wall outlet, the WebSocket will trigger the close event 
@@ -144,8 +145,7 @@ module.exports = class MyDevice extends Homey.Device {
                 let kWhAdded = (this.Power * Sec) / 3600000; //Last power reported
                 let kWh = this.getCapabilityValue('meter_power');
                 this.setCapabilityValue('meter_power', kWh + kWhAdded).catch(this.error);
-                if (this.percentChange(this.Power, js.data.current_power) >= 1.5) {
-                    //Procent change more then 1.5 %
+                if (this.percentChange(this.Power, js.data.current_power) >= this.PowerReportChangeMoreThenPercent) {
                     this.setCapabilityValue('measure_power', js.data.current_power).catch(this.error);
                 }
                 this.Power = js.data.current_power;
