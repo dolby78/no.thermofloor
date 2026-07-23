@@ -105,7 +105,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.SendPing();
 
         let previousReportReceivedInSec = (Date.now() - this.LastBong) / 1000;
-        if (this.PlugIsOnline() && previousReportReceivedInSec >= 65) {
+        if (this.PlugIsAvailable() && previousReportReceivedInSec >= 65) {
             this.PlugIsOffline();
         }
 
