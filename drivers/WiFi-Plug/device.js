@@ -30,7 +30,7 @@ module.exports = class MyDevice extends Homey.Device {
       });
 
       this.setCapabilityValue('measure_power', this.Power).catch(this.error);
-      this.setAvailable().catch(this.error);
+      this.PlugIsOnline();
 
       await this.loadSettings();
       await this.initWebSocket();
@@ -60,7 +60,7 @@ module.exports = class MyDevice extends Homey.Device {
 
         this.ws.on('open', () => {
             this.debug('Connected to the WebSocket...');
-            this.setAvailable().catch(this.error); // Show device as online in Homey
+            this.PlugIsOnline();
             this.GetPlugStatusAndSetMac(); //From local API
         });
 
@@ -105,7 +105,7 @@ module.exports = class MyDevice extends Homey.Device {
         this.SendPing();
 
         let sec = (Date.now() - this.LastBong) / 1000;
-        if (this.PlugIsAvailable() && sec >= 65) {
+        if (this.PlugIsOnline() && sec >= 65) {
             this.PlugIsOffline();
         }
 
@@ -144,7 +144,7 @@ module.exports = class MyDevice extends Homey.Device {
                 this.LastPowerReport = Date.now();
             }
         } else if (js.type === "pong") {
-            this.setAvailable().catch(this.error);
+            this.PlugIsOnline();
             this.LastBong = Date.now();
         }
     }
@@ -224,7 +224,7 @@ module.exports = class MyDevice extends Homey.Device {
                         this.MACaddressIsValid = true;
                         this.reconnectWebSocketByMac();
                     }
-                    if (!this.deviceIsDeleted) this.setAvailable().catch(this.error);
+                    this.PlugIsOnline();
                 } catch (e) {
                     this.log('Cannot connect to API.')
                     this.PlugIsOffline();
@@ -240,7 +240,15 @@ module.exports = class MyDevice extends Homey.Device {
     PlugIsOffline() {
         this.Power = 0;
         this.setCapabilityValue('measure_power', this.Power).catch(this.error);
-        this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
+        if (this.PlugIsAvailable()) {
+            this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
+        }
+    }
+
+    PlugIsOnline() {
+        if (!PlugIsAvailable() && !this.deviceIsDeleted) {
+            this.setAvailable().catch(this.error);
+        }
     }
 
     PlugIsAvailable() {
