@@ -16,7 +16,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.deviceIsDeleted = false;
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
-      this.MaxReconnactionTrys = 5; //Reconnection by MAC if connection to Wall plug lost
+      this.MaxReconnactionTrys = 5; //Reconnection by MAC if connection to Wall plug is lost
       this.ReconnactionTry = 1;
       this.Power = 0;
 
@@ -34,27 +34,40 @@ module.exports = class MyDevice extends Homey.Device {
 
       await this.loadSettings();
       await this.initWebSocket();
-      this.startHeartbeat(); // Keep WebSocket connection alive
-  }
+      this.startHeartbeatLoop(); // Keep WebSocket connection alive
+    }
+
+    async loadSettings() {
+        if (this.getStore().address != null) {
+            await this.setSettings({ IPaddress: this.getStore().address, });
+            this.IPaddress = this.getStore().address;
+        } else {
+            this.IPaddress = this.getSettings().IPaddress.trim();
+        }
+
+        this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
+        this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
+        this.IPaddressIsValid = this.ipIsValid();
+    }
 
     async initWebSocket() {
 
-        if (!this.ipIsValid()) {
+        if (!this.IPaddressIsValid) {
             return; //Exit
         }
 
         this.ws = new WebSocket('ws://' + this.IPaddress + ":80/ws");
 
         this.ws.on('open', () => {
-            this.debug('Connected to the WebSocket server');
+            this.debug('Connected to the WebSocket...');
             this.setAvailable().catch(this.error); // Show device as online in Homey
-            this.GetPlugStatus(); //From local API
+            this.GetPlugStatusAndSetMac(); //From local API
         });
 
         this.ws.on('message', (data) => {
             try {
                 const parsed = JSON.parse(data);
-                this.recivedData(parsed);
+                this.recivedDataFromWebSocket(parsed);
             } catch (err) {
                 this.error('Error parsing JSON data:', err);
             }
@@ -64,8 +77,7 @@ module.exports = class MyDevice extends Homey.Device {
             if (!this.deviceIsDeleted) {
                 this.debug('WebSocket connection closed. Reconnecting...');
                 this.PlugIsOffline(); // Show as offline
-                // Reconnect after 5 seconds
-                setTimeout(() => this.reconnectByMac(), 5000); //-> initWebSocket
+                this.reconnectWebSocketByMac();
             }
         });
 
@@ -80,30 +92,30 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    startHeartbeat() {
+    startHeartbeatLoop() {
 
         if (this.deviceIsDeleted) {
             return; //exit 
         }
 
+        if (this.ws === null || (this.ws && this.ws.readyState === this.ws.CLOSED)) {
+            this.reconnectWebSocketByMac();
+        }
+
         this.SendPing();
 
         let sec = (Date.now() - this.LastBong) / 1000;
-        if (sec >= 65) {
+        if (this.PlugIsAvailable() && sec >= 65) {
             this.PlugIsOffline();
         }
 
-        if (this.ws === null || (this.ws && this.ws.readyState === this.ws.CLOSED)) {
-            this.reconnectByMac(); //-->initWebSocket
-        }
-
         setTimeout(() => {
-            this.startHeartbeat()
+            this.startHeartbeatLoop()
         }, 60 * 1000);
        
     }
 
-    recivedData(js) {
+    recivedDataFromWebSocket(js) {
         this.debug('Received data: ' + JSON.stringify(js))
         if (js.type === "state" && js.data !== null) {
             if (js.data.state === "ON" || js.data.state === "OFF") {
@@ -175,18 +187,6 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    async loadSettings() {
-        if (this.getStore().address != null) {  
-            await this.setSettings({ IPaddress: this.getStore().address, });
-            this.IPaddress = this.getStore().address;
-        } else {
-            this.IPaddress = this.getSettings().IPaddress.trim();
-        }
-
-        this.MACaddress = this.getSettings().MACaddress.trim().toUpperCase();
-        this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
-    }
-
     ipIsValid() {
         if (this.getStore().address != null) {
             return true;
@@ -198,17 +198,16 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    GetPlugStatus() {
+  
 
-        const client = http.get({
+    GetPlugStatusAndSetMac() {
+
+        http.get({
             hostname: this.IPaddress,
             port: 80,
             path: '/api/status',
             agent: false,
         }, (res) => {
-
-            const { statusCode } = res;
-            const contentType = res.headers['content-type'];
 
             res.setEncoding('utf8');
             let rawData = '';
@@ -220,7 +219,10 @@ module.exports = class MyDevice extends Homey.Device {
                     this.Power = parsedData.currentPower;
                     this.setCapabilityValue('measure_power', this.Power).catch(this.error);
                     if (!this.MACaddressIsValid && this.MACaddress == "GET") {
-                        this.setSettings({ MACaddress: parsedData.network.mac }).catch(this.error);
+                        this.MACaddress = parsedData.network.mac;
+                        this.setSettings({ MACaddress: this.MACaddress }).catch(this.error);
+                        this.MACaddressIsValid = true;
+                        this.reconnectWebSocketByMac();
                     }
                     if (!this.deviceIsDeleted) this.setAvailable().catch(this.error);
                 } catch (e) {
@@ -241,16 +243,29 @@ module.exports = class MyDevice extends Homey.Device {
         this.setUnavailable('Cannot reach device on local WiFi').catch(this.error);
     }
 
-    reconnectByMac() {
+    PlugIsAvailable() {
+        return this.getAvailable();
+    }
+
+    reconnectWebSocketByMac() {
         if (this.deviceIsDeleted) {
             return; //exit 
         }
+        this.debug("Reconnect WebSocket By Mac");
 
-        if (this.MACaddressIsValid && this.ReconnactionTry <= this.MaxReconnactionTrys) {
+        if (this.MACaddressIsValid) {
+            this.scanNetworkAndReconnectWebSocektByMacAsync();
+        } else if (this.IPaddressIsValid) {
+            this.GetPlugStatusAndSetMac(); //From local API
+        }
+    }
+
+    scanNetworkAndReconnectWebSocektByMacAsync() {
+        if (this.ReconnactionTry <= this.MaxReconnactionTrys) {
             this.debug("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
             (async () => {
                 try {
-                    this.scanNetworkByMac();
+                    this.scanNetworkAndReconnectWebSocektByMacAsync();
                 } catch (error) {
 
                 }
@@ -258,7 +273,7 @@ module.exports = class MyDevice extends Homey.Device {
         }
     }
 
-    async scanNetworkByMac() {
+    async scanNetworkAndReconnectWebSocektByMacAsync() {
         this.ReconnactionTry++;
 
         const baseIp = util.getBaseIpAddress(); //'192.168.1.'
@@ -279,9 +294,9 @@ module.exports = class MyDevice extends Homey.Device {
             }
             let data = await this.getWiFiPlugData(device.ip);
             if (data.IsWiFiPlug && data.Mac === this.MACaddress) {
+                this.debug('WiFi Plug found by Mac: ' + data.Mac);
                 this.IPaddress = device.ip;
                 this.setSettings({ IPaddress: this.IPaddress, }); 
-                this.log('WiFi Plug found by Mac: ' + data.Mac);
                 this.ReconnactionTry = 1;
                 await this.initWebSocket();
                 break; // Found device, exit loop
@@ -299,9 +314,6 @@ module.exports = class MyDevice extends Homey.Device {
                 path: '/api/status',
                 agent: false,
             }, (res) => {
-
-                const { statusCode } = res;
-                const contentType = res.headers['content-type'];
 
                 res.setEncoding('utf8');
                 let rawData = '';
@@ -367,8 +379,14 @@ module.exports = class MyDevice extends Homey.Device {
       this.IPaddress = newSettings.IPaddress;
       this.MACaddress = newSettings.MACaddress.trim().toUpperCase();
       this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
+      this.IPaddressIsValid = util.isValidIpAddress(this.IPaddress);
 
-      this.closeWebSocket(); //Reload by mac address
+      if (this.ws && this.ws.readyState === this.ws.OPEN) {
+        this.closeWebSocket(); //Close and reconnect by mac address
+      } else {
+        this.reconnectWebSocketByMac();
+      }
+      
   }
 
   /**
