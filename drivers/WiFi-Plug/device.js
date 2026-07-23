@@ -16,7 +16,7 @@ module.exports = class MyDevice extends Homey.Device {
       this.deviceIsDeleted = false;
       this.Power = 0;
       this.LastPowerReport = Date.now();
-      this.LastBong = Date.now();
+      this.LastPong = Date.now();
       this.ReconnactionTry = 1;
       this.PowerReportChangeMoreThenPercent = 5;
 
@@ -112,7 +112,7 @@ module.exports = class MyDevice extends Homey.Device {
 
         this.SendPing();
 
-        let previousReportReceivedInSec = (Date.now() - this.LastBong) / 1000;
+        let previousReportReceivedInSec = (Date.now() - this.LastPong) / 1000;
         this.debug("Heartbeat " + previousReportReceivedInSec.toString() + " Sec Available: " + this.PlugIsAvailable().toString())
         if (this.PlugIsAvailable() && previousReportReceivedInSec >= 65) {
             this.PlugIsOffline();
@@ -153,7 +153,7 @@ module.exports = class MyDevice extends Homey.Device {
             }
         } else if (js.type === "pong") {
             this.PlugIsOnline();
-            this.LastBong = Date.now();
+            this.LastPong = Date.now();
         }
     }
 
