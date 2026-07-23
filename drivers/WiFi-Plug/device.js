@@ -299,7 +299,7 @@ module.exports = class MyDevice extends Homey.Device {
                     try {
                         const parsedData = JSON.parse(rawData);
                         if (parsedData.model !== null && parsedData.model === "WALL PLUG") {
-                            this.log('IsWiFiPlug true. IP: ' + ip + " Mac: " + parsedData.network.mac);
+                            this.debug('IsWiFiPlug true. IP: ' + ip + " Mac: " + parsedData.network.mac);
                             resolve({ "IsWiFiPlug": true, "Mac": parsedData.network.mac });
                         } else {
                             resolve({ "IsWiFiPlug": false });
@@ -310,7 +310,7 @@ module.exports = class MyDevice extends Homey.Device {
                 });
 
             }).on('error', (e) => {
-                this.log('IsWiFiPlug false');
+                this.debug('IsWiFiPlug false');
                 resolve({ "IsWiFiPlug": false });
             });
         });
