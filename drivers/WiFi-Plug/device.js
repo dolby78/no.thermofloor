@@ -74,6 +74,12 @@ module.exports = class MyDevice extends Homey.Device {
         });
     }
 
+    closeWebSocket() {
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+
     startHeartbeat() {
 
         if (this.deviceIsDeleted) {
@@ -361,6 +367,8 @@ module.exports = class MyDevice extends Homey.Device {
       this.IPaddress = newSettings.IPaddress;
       this.MACaddress = newSettings.MACaddress.trim().toUpperCase();
       this.MACaddressIsValid = util.isValidMACAddress(this.MACaddress);
+
+      this.closeWebSocket(); //Reload by mac address
   }
 
   /**
@@ -377,9 +385,7 @@ module.exports = class MyDevice extends Homey.Device {
    */
   async onDeleted() {
     this.deviceIsDeleted = true;
-    if (this.ws) {
-        this.ws.close();
-    }
+    this.closeWebSocket();
     this.log('WiFi Wall Plug has been deleted');
   }
 
