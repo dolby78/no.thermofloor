@@ -38,6 +38,11 @@ module.exports = class MyDevice extends Homey.Device {
   }
 
     async initWebSocket() {
+
+        if (!this.ipIsValid()) {
+            return; //Exit
+        }
+
         this.ws = new WebSocket('ws://' + this.IPaddress + ":80/ws");
 
         this.ws.on('open', () => {
@@ -178,12 +183,12 @@ module.exports = class MyDevice extends Homey.Device {
 
     ipIsValid() {
         if (this.getStore().address != null) {
-            return true
+            return true;
         } else if (util.isValidIpAddress(this.getSettings().IPaddress.trim())) {
-            return true
+            return true;
         } else {
             this.setUnavailable('Please check that you have entered a valid IP address in advanced settings and that the device is turned on.').catch(this.error);
-            return false
+            return false;
         }
     }
 
