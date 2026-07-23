@@ -14,11 +14,17 @@ module.exports = class MyDevice extends Homey.Device {
       this.log('WiFi Plug has been initialized');
       this.isDebug = true;
       this.deviceIsDeleted = false;
+      this.Power = 0;
       this.LastPowerReport = Date.now();
       this.LastBong = Date.now();
-      this.MaxReconnactionTrys = 5; //Reconnection by MAC if connection to Wall plug is lost
-      this.ReconnactionTry = 1;
-      this.Power = 0;
+
+      /**
+       * MaxReconnactionTrys. If you unplug the device from the wall outlet, the WebSocket will trigger the close event 
+       * after approximately 16 minutes (960 seconds). The heartbeat function will then attempt to reconnect every minute, 
+       * repeating the attempt for the number of times specified in this variable.
+       * */
+      this.MaxReconnactionTrys = 100; 
+      
 
       this.registerCapabilityListener('onoff', async (value) => {
           this.debug("Changed On/Off", value);
@@ -263,13 +269,13 @@ module.exports = class MyDevice extends Homey.Device {
         this.debug("Reconnect WebSocket By Mac");
 
         if (this.MACaddressIsValid) {
-            this.scanNetworkAndReconnectWebSocektByMacAsync();
+            this.scanNetworkAndReconnectWebSocektByMac();
         } else if (this.IPaddressIsValid) {
             this.GetPlugStatusAndSetMac(); //From local API
         }
     }
 
-    scanNetworkAndReconnectWebSocektByMacAsync() {
+    scanNetworkAndReconnectWebSocektByMac() {
         if (this.ReconnactionTry <= this.MaxReconnactionTrys) {
             this.debug("Try:" + this.ReconnactionTry + ". Searching for WiFi Wall Plug by MAC address: " + this.MACaddress);
             (async () => {
